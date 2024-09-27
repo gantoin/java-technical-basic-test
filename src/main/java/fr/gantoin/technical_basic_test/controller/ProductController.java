@@ -1,12 +1,11 @@
 package fr.gantoin.technical_basic_test.controller;
 
 import fr.gantoin.technical_basic_test.entities.Product;
-import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.*;
-
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 public class ProductController {
@@ -40,19 +39,29 @@ public class ProductController {
 
     @GetMapping("/products")
     public List<Product> getProducts() {
-        // TODO: Convert the map to a list and return it
-        return existingProducts;
+        return existingProducts.values().stream().toList();
     }
 
     @GetMapping("/products/{id}")
-    public Product getProductById(@PathVariable int id) {
-        //TODO: Implement the method to return the product with the given id
-        return null;
+    public ResponseEntity<Product> getProductById(@PathVariable int id) {
+        Product product = existingProducts.get(id);
+
+        if (product == null) {
+            return ResponseEntity.notFound().eTag("No such product id").build();
+        }
+
+        return ResponseEntity.ok(product);
     }
 
     @PostMapping("/products")
-    public Product addProduct(@RequestBody Product product) {
-        // TODO: Implement the method to add a new product and return it
-        return null;
+    public ResponseEntity<Product> addProduct(@RequestBody Product product) {
+        int lastId = existingProducts.keySet().stream().max(Integer::compareTo).orElse(0);
+
+        if (product.id() <= lastId) {
+            return ResponseEntity.notFound().eTag("Wrong id").build();
+        }
+
+        existingProducts.put(product.id(), product);
+        return ResponseEntity.ok(product);
     }
 }
